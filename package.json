@@ -2,11 +2,14 @@
   "name": "jobalak",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start -H 0.0.0.0",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "15.5.2",
