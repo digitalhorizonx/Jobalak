@@ -1,16 +1,46 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function PaymentSuccessPage() {
+  const params = useSearchParams();
+  const token = params.get("token");
+  const [state, setState] = useState<"checking" | "success" | "error">("checking");
+
+  useEffect(() => {
+    if (!token) {
+      setState("error");
+      return;
+    }
+
+    let cancelled = false;
+    fetch("/api/paypal/capture-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: token }),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!cancelled) setState(response.ok && data?.ok ? "success" : "error");
+      })
+      .catch(() => {
+        if (!cancelled) setState("error");
+      });
+
+    return () => { cancelled = true; };
+  }, [token]);
+
   return (
     <main>
       <nav className="nav shell"><Link href="/" className="brand"><span className="brandDot" />Jobalak</Link><span className="navBadge">AI Job Hunter</span></nav>
       <section className="pageHero shell">
-        <span className="eyebrow">تم الرجوع من PayPal</span>
-        <h1>استلمنا رجوعك من الدفع.</h1>
-        <p>هنأكد عملية الدفع قبل تفعيل محاولة البحث. الرجوع للصفحة دي لوحده مش إثبات دفع، وده لحماية طلبك وحسابنا.</p>
+        <span className="eyebrow">تأكيد الدفع</span>
+        {state === "checking" && <><h1>بنأكد عملية الدفع...</h1><p>استنى ثواني، بنراجع العملية مباشرة مع PayPal.</p></>}
+        {state === "success" && <><h1>تم الدفع بنجاح ✓</h1><p>PayPal أكد عملية الدفع. محاولة البحث بتاعتك أصبحت مدفوعة ومؤكدة.</p></>}
+        {state === "error" && <><h1>الدفع لسه مش مؤكد.</h1><p>ما فعلناش أي محاولة بحث لأننا ما استلمناش تأكيد دفع مكتمل من PayPal.</p></>}
         <div className="infoCard" style={{ marginTop: 24 }}>
-          <h2>الخطوة التالية</h2>
-          <p>بعد إضافة التحقق الآمن من PayPal، أي عملية دفع مؤكدة هتفعّل محاولة البحث تلقائيًا.</p>
           <Link className="cta" style={{ display: "block", textAlign: "center" }} href="/">الرجوع لـ Jobalak</Link>
         </div>
       </section>
